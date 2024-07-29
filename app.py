@@ -2,13 +2,12 @@ from flask import Flask, request, redirect, url_for, render_template, session, g
 import sqlite3
 import logging
 
-# Configure logging
-logging.basicConfig(level=logging.DEBUG)
-
 app = Flask(__name__)
 app.secret_key = 'your_secret_key'  # Replace with a secure secret key
+DATABASE = '/tmp/database.db'  # Adjust path as needed
 
-DATABASE = '/tmp/database.db'  # Adjust the path as needed
+# Configure logging
+logging.basicConfig(filename='app.log', level=logging.DEBUG, format='%(asctime)s %(levelname)s %(message)s')
 
 def get_db():
     """Connect to the SQLite database."""
@@ -25,12 +24,12 @@ def close_connection(exception):
 
 @app.route('/')
 def index():
-    """Homepage."""
-    return "Welcome to the Serial Number System. Please login to access the admin panel."
+    """Customer homepage."""
+    return render_template('index.html')
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
-    """Login page for admin."""
+    """Admin login page."""
     if request.method == 'POST':
         if request.form['password'] == 'your_admin_password':  # Replace with your desired password
             session['logged_in'] = True
@@ -57,7 +56,7 @@ def add_serials():
     """Add serial numbers to the database."""
     if not session.get('logged_in'):
         return redirect(url_for('login'))
-    
+
     serial_numbers = request.form['serial_numbers'].split()
     db = get_db()
     cursor = db.cursor()
@@ -74,7 +73,7 @@ def search_serials():
     """Search for serial numbers in the database."""
     if not session.get('logged_in'):
         return redirect(url_for('login'))
-    
+
     query = request.args.get('query', '')
     db = get_db()
     cursor = db.cursor()
@@ -85,7 +84,7 @@ def search_serials():
 @app.errorhandler(Exception)
 def handle_exception(e):
     """Handle and log exceptions."""
-    app.logger.error(f"Exception occurred: {e}")
+    app.logger.error(f"Exception occurred: {e}", exc_info=True)
     return "An internal error occurred. Please try again later.", 500
 
 if __name__ == '__main__':
