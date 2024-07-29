@@ -1,7 +1,9 @@
-from flask import Flask, render_template, request, g, redirect, url_for
+from flask import Flask, render_template, request, g, redirect, url_for, session
 import sqlite3
+from functools import wraps
 
 app = Flask(__name__)
+app.secret_key = 'your_secret_key'  # Replace with a strong secret key
 DATABASE = 'database.db'
 
 def get_db():
@@ -15,6 +17,14 @@ def close_connection(exception):
     db = getattr(g, '_database', None)
     if db is not None:
         db.close()
+
+def login_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if 'logged_in' not in session:
+            return redirect(url_for('login'))
+        return f(*args, **kwargs)
+    return decorated_function
 
 @app.route('/')
 def index():
@@ -35,22 +45,14 @@ def register():
         db.commit()
         return "Serial number registered successfully."
 
-@app.route('/admin')
-def admin():
-    return render_template('admin.html')
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        if request.form['password'] == 'your_admin_password':  # Replace with your desired password
+            session['logged_in'] = True
+            return redirect(url_for('admin'))
+        else:
+            return "Invalid password"
+    return render_template('login.html')
 
-@app.route('/add_serials', methods=['POST'])
-def add_serials():
-    serial_numbers = request.form['serial_numbers'].split()
-    db = get_db()
-    cursor = db.cursor()
-    for serial in serial_numbers:
-        try:
-            cursor.execute('INSERT INTO serial_numbers (serial) VALUES (?)', (serial,))
-        except sqlite3.IntegrityError:
-            pass
-    db.commit()
-    return redirect(url_for('admin'))
-
-if __name__ == '__main__':
-    app.run(debug=True)
+@app.route('/logout')
