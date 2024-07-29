@@ -56,3 +56,28 @@ def login():
     return render_template('login.html')
 
 @app.route('/logout')
+def logout():
+    session.pop('logged_in', None)
+    return redirect(url_for('index'))
+
+@app.route('/admin')
+@login_required
+def admin():
+    return render_template('admin.html')
+
+@app.route('/add_serials', methods=['POST'])
+@login_required
+def add_serials():
+    serial_numbers = request.form['serial_numbers'].split()
+    db = get_db()
+    cursor = db.cursor()
+    for serial in serial_numbers:
+        try:
+            cursor.execute('INSERT INTO serial_numbers (serial) VALUES (?)', (serial,))
+        except sqlite3.IntegrityError:
+            pass
+    db.commit()
+    return redirect(url_for('admin'))
+
+if __name__ == '__main__':
+    app.run(debug=True)
