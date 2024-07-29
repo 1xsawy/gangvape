@@ -2,14 +2,20 @@
 <html lang="en">
   <head>
     <meta charset="utf-8">
-    <title>Admin - Add Serial Numbers</title>
+    <title>Admin</title>
   </head>
   <body>
-    <h1>Admin - Add Serial Numbers</h1>
+    <h1>Admin Panel</h1>
     <form action="/add_serials" method="post">
       <label for="serial_numbers">Enter Serial Numbers (separate with space):</label>
       <textarea id="serial_numbers" name="serial_numbers" rows="10" cols="30"></textarea>
       <button type="submit">Add Serial Numbers</button>
+    </form>
+    <h2>Search Serial Numbers</h2>
+    <form action="/search_serials" method="get">
+      <label for="query">Search Query:</label>
+      <input type="text" id="query" name="query" value="{{ request.args.get('query', '') }}">
+      <button type="submit">Search</button>
     </form>
     <a href="/logout">Logout</a>
   </body>

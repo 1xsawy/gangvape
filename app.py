@@ -1,73 +1,63 @@
-from flask import Flask, render_template, request, g, redirect, url_for, session
+from flask import Flask, request, redirect, url_for, render_template, session, g
 import sqlite3
-from functools import wraps
+import logging
+
+# Configure logging
+logging.basicConfig(level=logging.DEBUG)
 
 app = Flask(__name__)
-app.secret_key = 'your_secret_key'  # Replace with a strong secret key
-DATABASE = '/tmp/database.db'  # Use /tmp for serverless environments
+app.secret_key = 'your_secret_key'  # Replace with a secure secret key
+
+DATABASE = '/tmp/database.db'  # Adjust the path as needed
 
 def get_db():
-    db = getattr(g, '_database', None)
-    if db is None:
-        db = g._database = sqlite3.connect(DATABASE)
-    return db
+    """Connect to the SQLite database."""
+    if not hasattr(g, 'sqlite_db'):
+        g.sqlite_db = sqlite3.connect(DATABASE)
+    return g.sqlite_db
 
 @app.teardown_appcontext
 def close_connection(exception):
-    db = getattr(g, '_database', None)
+    """Close database connection."""
+    db = getattr(g, 'sqlite_db', None)
     if db is not None:
         db.close()
 
-def login_required(f):
-    @wraps(f)
-    def decorated_function(*args, **kwargs):
-        if 'logged_in' not in session:
-            return redirect(url_for('login'))
-        return f(*args, **kwargs)
-    return decorated_function
-
 @app.route('/')
 def index():
-    return render_template('index.html')
-
-@app.route('/register', methods=['POST'])
-def register():
-    serial_number = request.form['serial_number']
-    db = get_db()
-    cursor = db.cursor()
-    cursor.execute('SELECT * FROM serial_numbers WHERE serial = ?', (serial_number,))
-    result = cursor.fetchone()
-    
-    if result:
-        return "Serial number already registered."
-    else:
-        cursor.execute('INSERT INTO serial_numbers (serial) VALUES (?)', (serial_number,))
-        db.commit()
-        return "Serial number registered successfully."
+    """Homepage."""
+    return "Welcome to the Serial Number System. Please login to access the admin panel."
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
+    """Login page for admin."""
     if request.method == 'POST':
         if request.form['password'] == 'your_admin_password':  # Replace with your desired password
             session['logged_in'] = True
             return redirect(url_for('admin'))
         else:
-            return "Invalid password"
+            return "Invalid password", 403
     return render_template('login.html')
 
 @app.route('/logout')
 def logout():
+    """Logout and end the session."""
     session.pop('logged_in', None)
     return redirect(url_for('index'))
 
 @app.route('/admin')
-@login_required
 def admin():
+    """Admin page for adding and searching serial numbers."""
+    if not session.get('logged_in'):
+        return redirect(url_for('login'))
     return render_template('admin.html')
 
 @app.route('/add_serials', methods=['POST'])
-@login_required
 def add_serials():
+    """Add serial numbers to the database."""
+    if not session.get('logged_in'):
+        return redirect(url_for('login'))
+    
     serial_numbers = request.form['serial_numbers'].split()
     db = get_db()
     cursor = db.cursor()
@@ -78,6 +68,25 @@ def add_serials():
             pass
     db.commit()
     return redirect(url_for('admin'))
+
+@app.route('/search_serials', methods=['GET'])
+def search_serials():
+    """Search for serial numbers in the database."""
+    if not session.get('logged_in'):
+        return redirect(url_for('login'))
+    
+    query = request.args.get('query', '')
+    db = get_db()
+    cursor = db.cursor()
+    cursor.execute('SELECT * FROM serial_numbers WHERE serial LIKE ?', (f'%{query}%',))
+    results = cursor.fetchall()
+    return render_template('search_results.html', results=results, query=query)
+
+@app.errorhandler(Exception)
+def handle_exception(e):
+    """Handle and log exceptions."""
+    app.logger.error(f"Exception occurred: {e}")
+    return "An internal error occurred. Please try again later.", 500
 
 if __name__ == '__main__':
     app.run(debug=True)

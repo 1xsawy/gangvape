@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Search Results</title>
+  </head>
+  <body>
+    <h1>Search Results for "{{ query }}"</h1>
+    <ul>
+      {% for row in results %}
+        <li>{{ row[0] }}</li>  <!-- Adjust based on your table schema -->
+      {% else %}
+        <li>No results found.</li>
+      {% endfor %}
+    </ul>
+    <a href="/admin">Back to Admin</a>
+  </body>
+</html>
