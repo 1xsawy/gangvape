@@ -12,11 +12,12 @@
       <button type="submit">Add Serial Numbers</button>
     </form>
     <h2>Search Serial Numbers</h2>
-    <form action="/search_serials" method="get">
-      <label for="query">Search Query:</label>
-      <input type="text" id="query" name="query" value="{{ request.args.get('query', '') }}">
-      <button type="submit">Search</button>
-    </form>
+<form action="/search_serials" method="get">
+    <label for="query">Search Query:</label>
+    <input type="text" id="query" name="query" value="{{ request.args.get('query', '') }}">
+    <button type="submit">Search</button>
+</form>
+
     <a href="/logout">Logout</a>
   </body>
 </html>

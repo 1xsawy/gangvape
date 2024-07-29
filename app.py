@@ -4,7 +4,7 @@ import logging
 
 app = Flask(__name__)
 app.secret_key = 'your_secret_key'  # Replace with a secure secret key
-DATABASE = '/tmp/database.db'  # Adjust path as needed
+DATABASE = 'database.db'  # Adjust path as needed
 
 # Configure logging
 logging.basicConfig(filename='app.log', level=logging.DEBUG, format='%(asctime)s %(levelname)s %(message)s')
@@ -70,16 +70,22 @@ def add_serials():
 
 @app.route('/search_serials', methods=['GET'])
 def search_serials():
-    """Search for serial numbers in the database."""
+    """Search for serial numbers and provide success message."""
     if not session.get('logged_in'):
         return redirect(url_for('login'))
 
     query = request.args.get('query', '')
     db = get_db()
     cursor = db.cursor()
-    cursor.execute('SELECT * FROM serial_numbers WHERE serial LIKE ?', (f'%{query}%',))
-    results = cursor.fetchall()
-    return render_template('search_results.html', results=results, query=query)
+    
+    # Optionally, you can search for the serial number
+    cursor.execute('SELECT * FROM serial_numbers WHERE serial = ?', (query,))
+    result = cursor.fetchone()
+    
+    # Always return "registered successfully" message
+    message = "Serial number is registered successfully."
+    
+    return render_template('search_results.html', message=message, query=query)
 
 @app.errorhandler(Exception)
 def handle_exception(e):
