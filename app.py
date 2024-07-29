@@ -4,7 +4,7 @@ from functools import wraps
 
 app = Flask(__name__)
 app.secret_key = 'your_secret_key'  # Replace with a strong secret key
-DATABASE = 'database.db'
+DATABASE = '/tmp/database.db'  # Use /tmp for serverless environments
 
 def get_db():
     db = getattr(g, '_database', None)
