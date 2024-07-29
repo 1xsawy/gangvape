@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, g
+from flask import Flask, render_template, request, g, redirect, url_for
 import sqlite3
 
 app = Flask(__name__)
@@ -34,6 +34,23 @@ def register():
         cursor.execute('INSERT INTO serial_numbers (serial) VALUES (?)', (serial_number,))
         db.commit()
         return "Serial number registered successfully."
+
+@app.route('/admin')
+def admin():
+    return render_template('admin.html')
+
+@app.route('/add_serials', methods=['POST'])
+def add_serials():
+    serial_numbers = request.form['serial_numbers'].split()
+    db = get_db()
+    cursor = db.cursor()
+    for serial in serial_numbers:
+        try:
+            cursor.execute('INSERT INTO serial_numbers (serial) VALUES (?)', (serial,))
+        except sqlite3.IntegrityError:
+            pass
+    db.commit()
+    return redirect(url_for('admin'))
 
 if __name__ == '__main__':
     app.run(debug=True)
